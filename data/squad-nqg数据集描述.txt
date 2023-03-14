@@ -1,0 +1,10 @@
+row: 来自squad数据集 
+train.json: 一个段落有多个问题，一个问题对应一个答案
+test.json: 一个段落有多个问题，一个问题对应一个答案
+dev.json: 一个段落有多个问题，一个问题拥有多个答案
+
+processed: squad-nqg数据集
+para, src, tgt每一行依次对应
+para-*：代表这一行的问答所属的段落
+src-*：代表这一行对应问题的回答所在的句子
+tgt-*：代表这一行的问题，test和train没有保留所有squad数据集的问题，dev保留了
