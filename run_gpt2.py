@@ -6,6 +6,8 @@ from collections import OrderedDict
 import pandas as pd
 import argparse
 
+import config
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--model_type",
@@ -66,6 +68,7 @@ tokenizer = AutoTokenizer.from_pretrained("gpt2")
 # tokenizer = T5Tokenizer.from_pretrained("t5-small")
 model = AutoModelForCausalLM.from_pretrained("gpt2")
 # model = T5ForConditionalGeneration.from_pretrained("t5-small")
+model.to(config.device)
 
 data = load_dataset('squad', split='validation')
 result = {}
@@ -77,6 +80,7 @@ for _ in range(len(data)):
         answers+"\nSo the question is:"
     # prompt = "Today I believe we can finally"
     input_ids = tokenizer(prompt, return_tensors="pt").input_ids
+    input_ids = input_ids.to(config.device)
 
     torch.manual_seed(0)
     outputs = model.generate(input_ids, do_sample=True, max_length=1024)
