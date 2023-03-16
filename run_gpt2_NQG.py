@@ -62,10 +62,10 @@ data_question=load_dataset('text', data_files="./data/processed/tgt-dev.txt")
 data_source_sentence=load_dataset('text', data_files="./data/processed/src-dev.txt")
 
 result={}
-for _ in range(len(data)):
+for _ in range(len(data_context)):
     context=data_context[_]
     question=data_question[_]
-    source_sentence=data[_]
+    source_sentence=data_source_sentence[_]
     prompt="Context:"+context+"\nBased on the above context, generate the question for the answer in the source sentence:"+source_sentence+"\nSo the question is:"
     # prompt = "Today I believe we can finally"
     input_ids = tokenizer(prompt, return_tensors="pt").input_ids
