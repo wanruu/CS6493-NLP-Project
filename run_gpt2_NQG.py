@@ -85,7 +85,7 @@ for _ in tqdm.tqdm(range(len(data_question))):
     source_sentence = data_source_sentence[_]["text"]
     prompt = shot+"Source sentence:" + source_sentence + "\nSo the question is:"
     
-    crop_idx = prompt.index("So the question is:") + len("So the question is")
+    crop_idx = prompt.index("So the question is:") + len("So the question is:")
 
     # prompt = "Today I believe we can finally"
     input_ids = tokenizer(prompt, return_tensors="pt").input_ids
