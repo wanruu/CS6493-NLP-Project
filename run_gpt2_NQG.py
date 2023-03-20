@@ -86,11 +86,9 @@ for _ in tqdm.tqdm(range(len(data_context))):
     source_sentence = data_source_sentence[_]["text"]
     prompt = "Context:"+context+"\nBased on the above context, generate the question for the answer in the source sentence:" + \
         source_sentence+"\nSo the question is:"
-    offset=0
-    for i in range(len(prompt)):
-        _p=prompt[i]
-        if (_p=='.' or _p==',' or _p==';' or _p=="'") and prompt[i-1]==' ':
-            offset=offset+1
+    
+    crop_idx = prompt.index("So the question is:") + len("So the question is")
+
     # prompt = "Today I believe we can finally"
     input_ids = tokenizer(prompt, return_tensors="pt").input_ids
     input_ids = input_ids.to(config.device)
@@ -98,8 +96,8 @@ for _ in tqdm.tqdm(range(len(data_context))):
     torch.manual_seed(0)
     outputs = model.generate(input_ids, do_sample=True, max_length=1024)
     generated = tokenizer.batch_decode(outputs, skip_special_tokens=True)
-    result[_] = {'generated question': generated[0]
-                 [len(prompt)-offset:][0:300], 'gold question': question}
+    result[_] = {'generated question': generated[0][crop_idx:][0:300], 'gold question': question}
+
 
 init = (('generated question', []), ('gold question', []))
 save = OrderedDict(init)
