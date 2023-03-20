@@ -9,6 +9,8 @@ import tqdm
 
 import config
 
+shot= "Source sentence:the american football conference -lrb- afc -rrb- champion denver broncos defeated the national football conference -lrb- nfc -rrb- champion carolina panthers 24 -- 10 to earn their third super bowl title . \nSo the question is:which nfl team represented the afc at super bowl 50 ?\n\nSource sentence:the game was played on february 7 , 2016 , at levi 's stadium in the san francisco bay area at santa clara , california . \nSo the question is:where did super bowl 50 take place ?\n\n"
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--model_type",
@@ -72,20 +74,16 @@ model = AutoModelForCausalLM.from_pretrained("gpt2")
 model.to(config.device)
 
 
-data_context = load_dataset(
-    'text', data_files="./data/processed/para-dev.txt", split="train")
 data_question = load_dataset(
     'text', data_files="./data/processed/tgt-dev.txt", split="train")
 data_source_sentence = load_dataset(
     'text', data_files="./data/processed/src-dev.txt", split="train")
 
 result = {}
-for _ in tqdm.tqdm(range(len(data_context))):
-    context = data_context[_]["text"]
+for _ in tqdm.tqdm(range(len(data_question))):
     question = data_question[_]["text"]
     source_sentence = data_source_sentence[_]["text"]
-    prompt = "Context:"+context+"\nBased on the above context, generate the question for the answer in the source sentence:" + \
-        source_sentence+"\nSo the question is:"
+    prompt = shot+"Source sentence:" + source_sentence + "\nSo the question is:"
     
     crop_idx = prompt.index("So the question is:") + len("So the question is")
 
@@ -101,7 +99,7 @@ for _ in tqdm.tqdm(range(len(data_context))):
 
 init = (('generated question', []), ('gold question', []))
 save = OrderedDict(init)
-for _ in tqdm.tqdm(range(len(data_context))):
+for _ in tqdm.tqdm(range(len(data_question))):
     save['generated question'].append(result[_]['generated question'])
     save['gold question'].append(result[_]['gold question'])
 df = pd.DataFrame(data=save)
