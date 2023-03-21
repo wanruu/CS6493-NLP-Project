@@ -65,10 +65,8 @@ parser.add_argument("--num", type=int, default=None,
 
 args = parser.parse_args()
 
-tokenizer = AutoTokenizer.from_pretrained("gpt2")
-# tokenizer = T5Tokenizer.from_pretrained("t5-small")
-model = AutoModelForCausalLM.from_pretrained("gpt2")
-# model = T5ForConditionalGeneration.from_pretrained("t5-small")
+tokenizer = T5Tokenizer.from_pretrained("t5-small")
+model = T5ForConditionalGeneration.from_pretrained("t5-small")
 model.to(config.device)
 
 

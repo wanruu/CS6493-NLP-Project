@@ -5,7 +5,6 @@ from datasets import load_dataset
 from collections import OrderedDict
 import pandas as pd
 import argparse
-import tqdm
 
 import config
 
@@ -65,42 +64,31 @@ parser.add_argument("--num", type=int, default=None,
 
 args = parser.parse_args()
 
-tokenizer = AutoTokenizer.from_pretrained("gpt2")
-# tokenizer = T5Tokenizer.from_pretrained("t5-small")
-model = AutoModelForCausalLM.from_pretrained("gpt2")
-# model = T5ForConditionalGeneration.from_pretrained("t5-small")
+tokenizer = T5Tokenizer.from_pretrained("t5-small")
+model = T5ForConditionalGeneration.from_pretrained("t5-small")
 model.to(config.device)
 
-
-data_context = load_dataset(
-    'text', data_files="./data/processed/para-test.txt", split="train")
-data_question = load_dataset(
-    'text', data_files="./data/processed/tgt-test.txt", split="train")
-data_source_sentence = load_dataset(
-    'text', data_files="./data/processed/src-tset.txt", split="train")
-
+data = load_dataset('squad', split='validation')
 result = {}
-for _ in tqdm.tqdm(range(len(data_context))):
-    context = data_context[_]["text"]
-    question = data_question[_]["text"]
-    source_sentence = data_source_sentence[_]["text"]
-    prompt = "Context:"+context+"\nBased on the above context, generate the question whose answer is in the following sentences:" + \
-        source_sentence+"\nSo the question is:"
- 
-    crop_idx = prompt.index("So the question is:") + len("So the question is:")
-
+for _ in range(len(data)):
+    context = data[_]['context']
+    question = data[_]['question']
+    answers = data[_]['answers']['text'][0]
+    prompt = "Context:"+context+"\nBased on the above context, generate the question for the following answer:" + \
+        answers+"\nSo the question is:"
+    # prompt = "Today I believe we can finally"
     input_ids = tokenizer(prompt, return_tensors="pt").input_ids
     input_ids = input_ids.to(config.device)
 
     torch.manual_seed(0)
     outputs = model.generate(input_ids, do_sample=True, max_length=1024)
     generated = tokenizer.batch_decode(outputs, skip_special_tokens=True)
-    result[_] = {'generated question': generated[0][crop_idx:][0:300], 'gold question': question}
-
+    result[_] = {'generated question': generated[0]
+                 [len(prompt):][0:300], 'gold question': question}
 
 init = (('generated question', []), ('gold question', []))
 save = OrderedDict(init)
-for _ in tqdm.tqdm(range(len(data_question))):
+for _ in range(len(data)):
     save['generated question'].append(result[_]['generated question'])
     save['gold question'].append(result[_]['gold question'])
 df = pd.DataFrame(data=save)
