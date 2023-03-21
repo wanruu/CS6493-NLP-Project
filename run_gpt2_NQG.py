@@ -77,24 +77,24 @@ data_context = load_dataset(
 data_question = load_dataset(
     'text', data_files="./data/processed/tgt-test.txt", split="train")
 data_source_sentence = load_dataset(
-    'text', data_files="./data/processed/src-tset.txt", split="train")
+    'text', data_files="./data/processed/src-test.txt", split="train")
 
 result = {}
 for _ in tqdm.tqdm(range(len(data_context))):
     context = data_context[_]["text"]
     question = data_question[_]["text"]
     source_sentence = data_source_sentence[_]["text"]
-    prompt = "Context:"+context+"\nBased on the above context, generate the question whose answer is in the following sentences:" + \
-        source_sentence+"\nSo the question is:"
+    prompt = "Context:" + context + "\nBased on the above context, generate the question whose answer is in the following sentences:" + \
+        source_sentence + "\nSo the question is:"
  
-    crop_idx = prompt.index("So the question is:") + len("So the question is:")
-
     input_ids = tokenizer(prompt, return_tensors="pt").input_ids
     input_ids = input_ids.to(config.device)
 
     torch.manual_seed(0)
     outputs = model.generate(input_ids, do_sample=True, max_length=1024)
     generated = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+
+    crop_idx = generated[0].find("So the question is:") + len("So the question is:")
     result[_] = {'generated question': generated[0][crop_idx:][0:300], 'gold question': question}
 
 
