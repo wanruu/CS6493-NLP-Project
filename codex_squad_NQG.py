@@ -56,7 +56,7 @@ def method(data_context, data_question, data_source_sentence, model):
 
 def save_exp(data_context, data_question, data_source_sentence, result, output):
     print(f'save results to {output}')
-    init = (('context', []), ('question', []), ('answers', []), ('res',[]))
+    init = (('context', []), ('question', []), ('source_sentence', []), ('res',[]))
     save = OrderedDict(init)
     for _ in tqdm.tqdm(range(len(data_context))):
     	context=data_context[_]['text']
