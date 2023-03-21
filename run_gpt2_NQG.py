@@ -9,11 +9,6 @@ import tqdm
 
 import config
 
-shot = "Source sentence:the american football conference -lrb- afc -rrb- champion denver broncos defeated the national football conference -lrb- nfc -rrb- champion carolina panthers 24 -- 10 to earn their third super bowl title . \n" + \
-    "So the question is:which nfl team represented the afc at super bowl 50 ?\n\n" + \
-    "Source sentence:the game was played on february 7 , 2016 , at levi 's stadium in the san francisco bay area at santa clara , california . \n" + \
-    "So the question is:where did super bowl 50 take place ?\n\n"
-
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--model_type",
@@ -77,30 +72,29 @@ model = AutoModelForCausalLM.from_pretrained("gpt2")
 model.to(config.device)
 
 
+data_context = load_dataset(
+    'text', data_files="./data/processed/para-test.txt", split="train")
 data_question = load_dataset(
-    'text', data_files="./data/processed/tgt-dev.txt", split="train")
+    'text', data_files="./data/processed/tgt-test.txt", split="train")
 data_source_sentence = load_dataset(
-    'text', data_files="./data/processed/src-dev.txt", split="train")
+    'text', data_files="./data/processed/src-tset.txt", split="train")
 
 result = {}
-for _ in tqdm.tqdm(range(len(data_question))):
+for _ in tqdm.tqdm(range(len(data_context))):
+    context = data_context[_]["text"]
     question = data_question[_]["text"]
     source_sentence = data_source_sentence[_]["text"]
-    prompt = shot + "Source sentence:" + source_sentence + "\nSo the question is:"
-    
+    prompt = "Context:"+context+"\nBased on the above context, generate the question whose answer is in the following sentences:" + \
+        source_sentence+"\nSo the question is:"
+ 
+    crop_idx = prompt.index("So the question is:") + len("So the question is:")
+
     input_ids = tokenizer(prompt, return_tensors="pt").input_ids
     input_ids = input_ids.to(config.device)
 
     torch.manual_seed(0)
     outputs = model.generate(input_ids, do_sample=True, max_length=1024)
     generated = tokenizer.batch_decode(outputs, skip_special_tokens=True)
-
-    # find the third "So the question is:" in generated[0], because first two are in shot
-    src, target = generated[0], "So the question is:"
-    crop_idx = src.find(target) + len(target)  # first
-    crop_idx += src[crop_idx:].find(target) + len(target)  # second
-    crop_idx += src[crop_idx:].find(target) + len(target)  # third
-    
     result[_] = {'generated question': generated[0][crop_idx:][0:300], 'gold question': question}
 
 
