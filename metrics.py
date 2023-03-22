@@ -1,49 +1,50 @@
 # BLEU-1,2,4, METEOR, ROUGE-L
+import os
+import csv
 import nltk
 import numpy as np
 from rouge import Rouge
-from nltk import word_tokenize
+# from nltk import word_tokenize
+from nltk.tokenize import RegexpTokenizer
 from nltk.translate.bleu_score import corpus_bleu
 from nltk.translate.meteor_score import single_meteor_score
 
 
-nltk.download("punkt")
+# nltk.download("punkt")
 nltk.download("wordnet")
 
 
 class Metrics:
-    def __init__(self, data):
+    def __init__(self, generateds, golds):
         """
             data: [(generated, gold)] - [(str, str)]
         """
-        self.generateds = [item[0] for item in data]
-        self.golds = [item[1] for item in data]
+        self.generateds = generateds
+        self.golds = golds
 
-        # tokenized
-        self.token_generateds = [word_tokenize(g) for g in self.generateds]
-        self.token_golds = [word_tokenize(g) for g in self.golds]
+        # tokenized data, for bleu and meteor
+        tokenizer = RegexpTokenizer(r"\w+")
+        self.token_generateds = [tokenizer.tokenize(g) for g in generateds]
+        self.token_golds = [tokenizer.tokenize(g) for g in golds]
 
-        # convert self.token_golds for bleu
+        # convert self.token_golds format for bleu
+        # bleu need reference list
         self.bleu_golds = [[g] for g in self.token_golds]
 
     @property
     def bleu_1(self):
-        # TODO: this will be influenced by punctuations
         return corpus_bleu(self.bleu_golds, self.token_generateds, weights=(1, 0, 0, 0))
     
     @property
     def bleu_2(self):
-        # TODO: this will be influenced by punctuations
         return corpus_bleu(self.bleu_golds, self.token_generateds, weights=(0.5, 0.5, 0, 0))
     
     @property
     def bleu_4(self):
-        # TODO: this will be influenced by punctuations
         return corpus_bleu(self.bleu_golds, self.token_generateds, weights=(0.25, 0.25, 0.25, 0.25))
     
     @property
     def meteor(self):
-        # TODO: this will be influenced by punctuations
         scores = [single_meteor_score(gold, generated) for generated, gold in zip(self.token_generateds, self.token_golds)]
         return np.mean(scores)
 
@@ -53,13 +54,74 @@ class Metrics:
         score = rouge.get_scores(self.generateds, self.golds)[0]["rouge-l"]["f"]
         return score
 
+    @property
+    def text(self):
+        _text = f"BLEU-1: {self.bleu_1:.3f}, BLEU-2: {self.bleu_2:.3f}, BLEU-4: {self.bleu_4:.3f}, " + \
+            f"METEOR: {self.meteor:.3f}, ROUGE-L: {self.rouge_l:.3f}"
+        return _text
+
+
+def read_results_from(filenames, headers):
+    generated_header, gold_header = headers[0], headers[1]
+    generateds, golds = [], []
+    for filename in filenames:
+        with open(filename, encoding="utf-8") as f:
+            for res in csv.DictReader(f):
+                generateds.append(res[generated_header])
+                golds.append(res[gold_header])
+    return generateds, golds
+
+
 
 if __name__ == "__main__":
-    generated = ['It', 'is', 'a', 'guide', 'to', 'action', 'which', 'ensures', 'that', 'the', 'military', 'always', 'obeys', 'the', 'commands', 'of', 'the', 'party']
-    gold = ['It', 'is', 'a', 'guide', 'to', 'action', 'that', 'ensures', 'that', 'the', 'military', 'will', 'forever', 'heed', 'Party', 'commands']
+    # For test
+    # generated = ['It', 'is', 'a', 'guide', 'to', 'action', 'which', 'ensures', 'that', 'the', 'military', 'always', 'obeys', 'the', 'commands', 'of', 'the', 'party']
+    # gold = ['It', 'is', 'a', 'guide', 'to', 'action', 'that', 'ensures', 'that', 'the', 'military', 'will', 'forever', 'heed', 'Party', 'commands']
 
-    generated = " ".join(generated) + "."
-    gold = " ".join(gold)
+    # generated = " ".join(generated) + "."
+    # gold = " ".join(gold)
 
-    M = Metrics([(generated, gold)])
-    print(f"BLEU-1: {M.bleu_1}, BLEU-2: {M.bleu_2}, BLEU-4: {M.bleu_4}, METEOR: {M.meteor}, ROUGE-L: {M.rouge_l}")
+    # M = Metrics([(generated, gold)])
+    # print(f"BLEU-1: {M.bleu_1}, BLEU-2: {M.bleu_2}, BLEU-4: {M.bleu_4}, METEOR: {M.meteor}, ROUGE-L: {M.rouge_l}")
+
+    # codex squad
+    codex_squad_path = "res/codex_squad_res/"
+    codex_squad_filenames = os.listdir(codex_squad_path)
+    codex_squad_filenames = [codex_squad_path + f for f in codex_squad_filenames]
+    codex_squad_headers = ["res", "question"]
+    generateds, golds = read_results_from(codex_squad_filenames, codex_squad_headers)
+    M = Metrics(generateds, golds)
+    print(M.text)
+    
+    # codex nqg
+    codex_nqg_path = "res/codex_nqg_res/"
+    codex_nqg_filenames = os.listdir(codex_nqg_path)
+    codex_nqg_filenames = [codex_nqg_path + f for f in codex_nqg_filenames]
+    codex_nqg_headers = ["res", "question"]
+    generateds, golds = read_results_from(codex_nqg_filenames, codex_nqg_headers)
+    M = Metrics(generateds, golds)
+    print(M.text)
+
+    # gpt2 squad
+    gpt2_squad_filename = "res/20230309_17_54gpt2.squad.csv"
+    gpt2_squad_headers = ["generated question", "gold question"]
+    generateds, golds = read_results_from([gpt2_squad_filename], gpt2_squad_headers)
+    for g_idx, g in enumerate(generateds):
+        idxs = set([g.find(","), g.find("."), g.find("?"), g.find("\n")]) - {-1}
+        if idxs:
+            generateds[g_idx] = g[:min(idxs)]
+    M = Metrics(generateds, golds)
+    print(M.text)
+    
+    # gpt2 squad
+    gpt2_nqg_path = "res/gpt2_nqg_res/"
+    gpt2_nqg_filenames = os.listdir(gpt2_nqg_path)
+    gpt2_nqg_filenames = [gpt2_nqg_path + f for f in gpt2_nqg_filenames]
+    gpt2_nqg_headers = ["generated question", "gold question"]
+    generateds, golds = read_results_from(codex_nqg_filenames, codex_nqg_headers)
+    for g_idx, g in enumerate(generateds):
+        idxs = set([g.find(","), g.find("."), g.find("?"), g.find("\n")]) - {-1}
+        if idxs:
+            generateds[g_idx] = g[:min(idxs)]
+    M = Metrics(generateds, golds)
+    print(M.text)
