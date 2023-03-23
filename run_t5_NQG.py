@@ -65,9 +65,11 @@ parser.add_argument("--num", type=int, default=None,
 
 args = parser.parse_args()
 
+device = 'cuda'
+
 tokenizer = T5Tokenizer.from_pretrained("t5-small")
 model = T5ForConditionalGeneration.from_pretrained("t5-small")
-model.to(config.device)
+model.to(device)
 
 
 data_context = load_dataset(
@@ -75,7 +77,7 @@ data_context = load_dataset(
 data_question = load_dataset(
     'text', data_files="./data/processed/tgt-test.txt", split="train")
 data_source_sentence = load_dataset(
-    'text', data_files="./data/processed/src-tset.txt", split="train")
+    'text', data_files="./data/processed/src-test.txt", split="train")
 
 result = {}
 for _ in tqdm.tqdm(range(len(data_context))):
@@ -88,7 +90,7 @@ for _ in tqdm.tqdm(range(len(data_context))):
     crop_idx = prompt.index("So the question is:") + len("So the question is:")
 
     input_ids = tokenizer(prompt, return_tensors="pt").input_ids
-    input_ids = input_ids.to(config.device)
+    input_ids = input_ids.to(device)
 
     torch.manual_seed(0)
     outputs = model.generate(input_ids, do_sample=True, max_length=1024)
