@@ -91,8 +91,8 @@ if __name__ == "__main__":
     codex_squad_headers = ["res", "question"]
     generateds, golds = read_results_from(codex_squad_filenames, codex_squad_headers)
     M = Metrics(generateds, golds)
-    print(M.text)
-    
+    print("codex on squad:", M.text)
+
     # codex nqg
     codex_nqg_path = "res/codex_nqg_res/"
     codex_nqg_filenames = os.listdir(codex_nqg_path)
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     codex_nqg_headers = ["res", "question"]
     generateds, golds = read_results_from(codex_nqg_filenames, codex_nqg_headers)
     M = Metrics(generateds, golds)
-    print(M.text)
+    print("codex on squad-nqg:", M.text)
 
     # gpt2 squad
     gpt2_squad_filename = "res/20230309_17_54gpt2.squad.csv"
@@ -111,9 +111,9 @@ if __name__ == "__main__":
         if idxs:
             generateds[g_idx] = g[:min(idxs)]
     M = Metrics(generateds, golds)
-    print(M.text)
-    
-    # gpt2 squad
+    print("gpt2 on squad:", M.text)
+
+    # gpt2 nqg
     gpt2_nqg_path = "res/gpt2_nqg_res/"
     gpt2_nqg_filenames = os.listdir(gpt2_nqg_path)
     gpt2_nqg_filenames = [gpt2_nqg_path + f for f in gpt2_nqg_filenames]
@@ -124,4 +124,18 @@ if __name__ == "__main__":
         if idxs:
             generateds[g_idx] = g[:min(idxs)]
     M = Metrics(generateds, golds)
-    print(M.text)
+    print("gpt2 on squad-nqg:", M.text)
+
+    # flant5 squad
+    flant5_squad_filename = "res/20230326_17_53flant5.squad.csv"
+    flant5_squad_headers = ["generated question", "gold question"]
+    generateds, golds = read_results_from([flant5_squad_filename], flant5_squad_headers)
+    M = Metrics(generateds, golds)
+    print("flant5 on squad:", M.text)
+
+    # flant5 nqg
+    flant5_nqg_filename = "res/20230327_12_06flant5nqg.csv"
+    flant5_nqg_headers = ["generated question", "gold question"]
+    generateds, golds = read_results_from([flant5_nqg_filename], flant5_nqg_headers)
+    M = Metrics(generateds, golds)
+    print("flant5 on nqg:", M.text)

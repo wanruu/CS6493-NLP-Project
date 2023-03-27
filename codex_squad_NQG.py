@@ -2,6 +2,7 @@ import math
 import argparse
 import pandas as pd
 import openai
+import pdb
 from time import sleep
 import time
 import os
@@ -35,19 +36,22 @@ def gen(model,a):
 
 def method(data_context, data_question, data_source_sentence, model):
     result={}
-    if model=="text-davinci-003":
-        openai.api_key = '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'
+    # if model=="text-davinci-003":
+    #     openai.api_key = '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'
     if model=="code-davinci-002":
         # openai.api_key ='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'
-        openai.api_key ='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'
+        # openai.api_key ='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'
+        openai.api_key ='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'
     result={}
     for _ in tqdm.tqdm(range(len(data_context))):
-    	context=data_context[_]['text']
+        context=data_context[_]['text']
         question=data_question[_]['text']
         source_sentence=data_source_sentence[_]['text']
         _id=str(_)
         #doc=row[3]
-        a=shot+"Context: "+context+"\nQ: Based on the above context, generate the question whose answer is in the following sentence:"+ source_sentence + "\nA:"
+        a=shot+"Context: "+context+"\nQ: Based on the above context, generate the question whose answer is in the following sentences:"+ source_sentence + "\nA:"
+        # print(a)
+        # pdb.set_trace()
         raw=gen(model,a)
         result[_id] = {'raw': raw, 'prompt': a}
 
@@ -59,7 +63,7 @@ def save_exp(data_context, data_question, data_source_sentence, result, output):
     init = (('context', []), ('question', []), ('source_sentence', []), ('res',[]))
     save = OrderedDict(init)
     for _ in tqdm.tqdm(range(len(data_context))):
-    	context=data_context[_]['text']
+        context=data_context[_]['text']
         question=data_question[_]['text']
         source_sentence=data_source_sentence[_]['text']
 
@@ -74,13 +78,10 @@ def save_exp(data_context, data_question, data_source_sentence, result, output):
 
 
 if __name__ =='__main__':
-	data_context = load_dataset(
-    'text', data_files="./data/processed/para-test.txt", split="train").select(range(0,1000))
-    data_question = load_dataset(
-        'text', data_files="./data/processed/tgt-test.txt", split="train").select(range(0,1000))
-    data_source_sentence = load_dataset(
-        'text', data_files="./data/processed/src-test.txt", split="train").select(range(0,1000))
+    data_context = load_dataset('text', data_files="./data/processed/para-test.txt", split="train").select(range(9000,11877))
+    data_question = load_dataset('text', data_files="./data/processed/tgt-test.txt", split="train").select(range(9000,11877))
+    data_source_sentence = load_dataset('text', data_files="./data/processed/src-test.txt", split="train").select(range(9000,11877))
 
     result=method(data_context, data_question, data_source_sentence, "code-davinci-002")
-    save_exp(data_context, data_question, data_source_sentence, result,'squad_codex_res.csv')       
+    save_exp(data_context, data_question, data_source_sentence, result,'squad_codex_res6000-9000.csv')       
 
